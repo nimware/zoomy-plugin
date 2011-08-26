@@ -1,5 +1,5 @@
 /*
-* Zoomy 1.3.2 a - jQuery plugin
+* Zoomy 1.3.2 modulized - jQuery plugin
 * http://redeyeops.com/plugins/zoomy
 *
 * Copyright (c) 2010 Jacob Lowe (http://redeyeoperations.com)
@@ -22,9 +22,9 @@
     'use strict';
     var ZoomyS = {
 	    count : []
-	};
-
-
+    };
+	
+	
     $.fn.zoomy = function (event, options) {
 
 	//defaults && option list
@@ -40,56 +40,63 @@
 	    },
 		    defaultEvent = 'click',
 		    
+		    get = {
+			    ratio : function (x, y) {
+				    var z = x / y;
+				    return z;
+			    },
+			    position : {
+				    stop : function (x, stop, zoomSize) {
+						var p = (x - zoomSize) + stop;
+						return p;
+				    },
+				
+				    mouse : function (x, y, halfSize) {
+					
+					    var p = x - y - halfSize;	
+					    return p;
+					
+				    },
+				    
+				    zoom : function (x, y, z, halfSize) {
+					
+					    var p = Math.round((x - y) / z) - halfSize;
+					    return p;
+					
+				    }
+			    },
+			    
+			    // Collision Object
+			    
+			    colObj : function (a, b, c, d) {
+				
+				    var bgPos = '-' + a + 'px ' + '-' + b + 'px',
+					    o = {
+						    backgroundPosition: bgPos,
+						    left: c,
+						    top: d
+					    };
+				    return o;
+			    }
+		    },
 		    
 		    change = {
 			
 				// Move Zoom Cursor
 				
-				move : function (ele, zoom, e) {
-				    var ratio = function (x, y) {
-					    var z = x / y;
-					    return z;
-					},
-					    id = zoom.attr('rel'),
-					    l = ele.offset(),
-					    zoomImgX = ZoomyS[id].zoom.x,
-					    zoomImgY = ZoomyS[id].zoom.y,
-					    tnImgX = ZoomyS[id].css.width,
-					    tnImgY = ZoomyS[id].css.height,
-					    zoomSize = options.zoomSize,
-					    halfSize = zoomSize / 2,
-					    ratioX = ratio(tnImgX, zoomImgX),
-					    ratioY = ratio(tnImgY, zoomImgY),
-					    stop = Math.round(halfSize - (halfSize * ratioX)),
-					    stopPos = function (x) {
-						    var p = (x - zoomSize) + stop;
-						    return p;
-					    },
-					    rightStop = stopPos(tnImgX),
-					    bottomStop = stopPos(tnImgY),
-					    zoomY = zoomImgY - zoomSize,
-					    zoomX = zoomImgX - zoomSize,
-					    mousePos = function (x, y) {
-						    var p = x - y - halfSize;	
-						    return p;
-					    },
-					    zoomPos = function (x, y, z) {
-						    var p = Math.round((x - y) / z) - halfSize;
-						    return p;
-					    },
-					    cdCreate = function (a, b, c, d) {
-						    var bgPos = '-' + a + 'px ' + '-' + b + 'px',
-							    o = {
-								    backgroundPosition: bgPos,
-								    left: c,
-								    top: d
-							    };
-						    return o;
-					    },
-					    posX = mousePos(e.pageX, l.left),
-					    posY = mousePos(e.pageY, l.top),
-					    leftX = zoomPos(e.pageX, l.left, ratioX),
-					    topY = zoomPos(e.pageY, l.top, ratioY),
+				move : function (zoom, e) {
+				    
+				    var id = zoom.attr('rel'),
+					    param = ZoomyS[id].params,
+					    posX = get.position.mouse(e.pageX, param.offset.left, param.half),
+					    posY = get.position.mouse(e.pageY, param.offset.top, param.half),
+					    leftX = get.position.zoom(e.pageX, param.offset.left, param.ratioX, param.half),
+					    topY = get.position.zoom(e.pageY, param.offset.top, param.ratioY, param.half),
+					    zoomX = param.zoomX,
+					    zoomY = param.zoomY,
+					    stop = param.stop,
+					    bottomStop = param.bottomStop,
+					    rightStop = param.rightStop,
 					    
 					    // Collision Detection Possiblities
 					    
@@ -151,13 +158,13 @@
 					    
 					    //Create CSS object to move Zoomy
 					    
-					    move = cdCreate(arrPosb[cssArrIndex][0], arrPosb[cssArrIndex][1], arrPosb[cssArrIndex][2], arrPosb[cssArrIndex][3], arrPosb[cssArrIndex][4], arrPosb[cssArrIndex][5]);
+					    move = get.colObj(arrPosb[cssArrIndex][0], arrPosb[cssArrIndex][1], arrPosb[cssArrIndex][2], arrPosb[cssArrIndex][3], arrPosb[cssArrIndex][4], arrPosb[cssArrIndex][5]);
 					    
 					    
 					    //Uncomment to see Index number for collision type
 					    //console.log(cssArrIndex)
 					    
-				// And Actual Call
+				    // And Actual Call
 					    
 				    zoom.css(move || {});
 	
@@ -168,9 +175,13 @@
 			    classes : function (ele) {
 				    var i = ele.find('.zoomy').attr('rel');
 				    if (ZoomyS[i].state === 0 || ZoomyS[i].state === null) {
+					
 					    ele.removeClass('inactive');
+					    
 				    } else {
+					
 					    ele.addClass('inactive');
+					    
 				    }
 			    },
 			    
@@ -244,6 +255,43 @@
 				    }).css(style.round(0));
 			    },
 			    
+			    // Store some static variables For change.move
+			    
+			    store : function (ele, zoom) {
+				
+				    var id = zoom.attr('rel'),
+					    dimensions = {
+						
+						    zoomImgX : ZoomyS[id].zoom.x,
+						    zoomImgY : ZoomyS[id].zoom.y,
+						    tnImgX : ZoomyS[id].css.width,
+						    tnImgY : ZoomyS[id].css.height,
+						    zoomSize : options.zoomSize,
+						    halfSize : options.zoomSize / 2
+				
+					    },
+					    
+					    ratio = get.ratio(dimensions.tnImgX, dimensions.zoomImgX),
+					    
+					    stop = Math.round(dimensions.halfSize - (dimensions.halfSize * ratio)),
+					    
+					    params = {
+						
+						    offset : ele.offset(),
+						    ratioX : ratio,
+						    ratioY : get.ratio(dimensions.tnImgY, dimensions.zoomImgY),
+						    zoomY : dimensions.zoomImgY - dimensions.zoomSize,
+						    zoomX : dimensions.zoomImgX - dimensions.zoomSize,
+						    stop : stop,
+						    rightStop : get.position.stop(dimensions.tnImgX, stop, dimensions.zoomSize),
+						    bottomStop : get.position.stop(dimensions.tnImgY, stop, dimensions.zoomSize),
+						    half : dimensions.halfSize
+							    
+					    };
+				    
+				    ZoomyS[id].params = params;
+			    },
+			    
 			    params : function (ele, zoom) {
 				    var img = ele.children('img'),
 				    
@@ -315,13 +363,12 @@
 				    img.css('margin', '0px');
 			
 			
-				    img.one("load", function () {
-					    ele.css(ZoomyS[id].css);
-				    }).each(function () {
-					    if (this.complete || ($.browser.msie && parseInt($.browser.version, 10) === 6)) {
-						    $(this).trigger("load");
-					    }
-				    });
+				    
+				    ele.css(css);
+				    
+				    
+				    style.store(ele, zoom);
+
 		    
 			    }
 			
@@ -379,10 +426,7 @@
 				    }
 			    },
 			    
-			    
-		
 			    // Add zoom element to page
-		
 			    zoom : function (ele, i) {
 				
 				    //Adding Initial State  
@@ -436,7 +480,7 @@
 										    
 										    //Fix on click show and positioning issues
 										    
-										    change.move(ele, zoom, e);
+										    change.move(zoom, e);
 										
 									    } else if (ZoomyS[i].state === 1 && event !== 'mouseover' && event !== 'mouseenter') {
 										    
@@ -465,7 +509,7 @@
 								    'mousemove': function (e) {
 									    if (ZoomyS[i].state !== 0 && ZoomyS[i].state !== null) {
 									    
-										    change.move(ele, zoom, e);
+										    change.move(zoom, e);
 									    
 									    }
 									
@@ -516,19 +560,22 @@
 					    initCallback(ele);
 				    }
 				    
-				    // Set basic parameters
 				    
-				    style.params(ele, zoom);
 				    
 				    // Load zoom image 
 				    
 				    build.image(image, zoom);
 				    
-				    //Event Handler added 1.2
+				    
+				    
+				    // Set basic parameters
+				    
+				    style.params(ele, zoom);
 				    
 				    
 				
 			    },
+			    
 			    
 			    // Initialize element to add to page, check for initial image to be loaded
 			    
