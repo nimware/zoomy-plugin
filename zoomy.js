@@ -351,7 +351,7 @@
 						    var assets = (options.glare) ?  '<span/>' : '',
 							border = style.border(zoom);
 
-						    image = image.replace(' ', '%20');
+						    image = image.replace(/ /g, '%20');
 						
 						    ZoomyS[id].zoom = {
 							    'x': zoom.find('img').width(),
