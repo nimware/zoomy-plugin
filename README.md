@@ -10,6 +10,10 @@ _Larry Battle_ [Email](mailto:blarry@bateru.com)
 
 _Chris Pearson_ [Website](http://www.upland.co.uk)
 
+####optional assets
+
+[_kill Zoomy(Utitliy to remove Zoomy from element)_](https://gist.github.com/1365874)
+
 
 #### Zoomy can make life easier _on the eyes. ^_^
 
